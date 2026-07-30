@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartFuel | Abastecimento Inteligente</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter e Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-display {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 3px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.2s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-900 min-h-full flex flex-col antialiased">
+  <div id="root" class="flex-grow flex flex-col"></div>
+
+  <!-- React & ReactDOM UMD CDNs -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel Standalone para transpilar JSX no navegador -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Script da Aplicação React -->
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useMemo } = React;
+
+    // --- ÍCONES SVG EMBUTIDOS (NENHUMA DEPENDÊNCIA EXTERNA NECESSÁRIA) ---
+    const FuelIcon = ({ className = "w-5 h-5", strokeWidth = 2 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M3 22L17 22" />
+        <path d="M20 9.5V20" />
+        <path d="M14 22V4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v18" />
+        <path d="M6 12h5" />
+        <path d="M10 9l-4 4" />
+        <path d="M10 13l-4-4" />
+        <circle cx="17" cy="6" r="3" />
+        <path d="M19 9l2 5" />
+      </svg>
+    );
+
+    const TrashIcon = ({ className = "w-5 h-5", strokeWidth = 2 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M3 6h18" />
+        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+        <line x1="10" x2="10" y1="11" y2="17" />
+        <line x1="14" x2="14" y1="11" y2="17" />
+      </svg>
+    );
+
+    const CalendarIcon = ({ className = "w-5 h-5", strokeWidth = 2 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+        <line x1="16" x2="16" y1="2" y2="6" />
+        <line x1="8" x2="8" y1="2" y2="6" />
+        <line x1="3" x2="21" y1="10" y2="10" />
+      </svg>
+    );
+
+    const EditIcon = ({ className = "w-5 h-5", strokeWidth = 2 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      </svg>
+    );
+
+    const CheckIcon = ({ className = "w-5 h-5", strokeWidth = 2 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M20 6 9 17l-5-5" />
+      </svg>
+    );
+
+    const RotateCcwIcon = ({ className = "w-5 h-5", strokeWidth = 2 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+        <path d="M3 3v5h5" />
+      </svg>
+    );
+
+    const InfoIcon = ({ className = "w-5 h-5", strokeWidth = 2 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 16v-4" />
+        <path d="M12 8h.01" />
+      </svg>
+    );
+
+    const TrendingUpIcon = ({ className = "w-5 h-5", strokeWidth = 2 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+        <polyline points="16 7 22 7 22 13" />
+      </svg>
+    );
+
+    const SparklesIcon = ({ className = "w-5 h-5", strokeWidth = 2 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+        <path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5.5z" />
+        <path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z" />
+      </svg>
+    );
+
+    const ClockIcon = ({ className = "w-5 h-5", strokeWidth = 2 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    );
+
+    const ZapIcon = ({ className = "w-5 h-5", strokeWidth = 2 }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+      </svg>
+    );
+
+    const DEFAULT_FUEL_OPTIONS = [
+      { type: 'Gasolina', name: 'Gasolina Comum', pricePerLiter: 5.89 },
+      { type: 'Etanol', name: 'Etanol Hidratado', pricePerLiter: 3.99 },
+      { type: 'Diesel', name: 'Diesel S10', pricePerLiter: 6.09 },
+      { type: 'GNV', name: 'Gás Natural (GNV)', pricePerLiter: 4.59 }
+    ];
+
+    function App() {
+      const [fuelOptions, setFuelOptions] = useState(() => {
+        try {
+          const saved = localStorage.getItem('smart_fuel_options');
+          return saved ? JSON.parse(saved) : DEFAULT_FUEL_OPTIONS;
+        } catch (e) {
+          return DEFAULT_FUEL_OPTIONS;
+        }
+      });
+
+      const [selectedType, setSelectedType] = useState('Gasolina');
+      const [cashValue, setCashValue] = useState('');
+      
+      const [history, setHistory] = useState(() => {
+        try {
+          const saved = localStorage.getItem('smart_fuel_history');
+          return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+          return [];
+        }
+      });
+
+      const [isEditingPrices, setIsEditingPrices] = useState(false);
+      const [priceEdits, setPriceEdits] = useState({
+        Gasolina: '5.89',
+        Etanol: '3.99',
+        Diesel: '6.09',
+        GNV: '4.59'
+      });
+
+      const [isFueling, setIsFueling] = useState(false);
+      const [fuelingProgress, setFuelingProgress] = useState(0);
+      const [fuelingDone, setFuelingDone] = useState(false);
+      const [lastFuelingResult, setLastFuelingResult] = useState(null);
+      const [inputError, setInputError] = useState(null);
+
+      useEffect(() => {
+        const edits = { ...priceEdits };
+        fuelOptions.forEach(opt => {
+          edits[opt.type] = opt.pricePerLiter.toFixed(2);
+        });
+        setPriceEdits(edits);
+      }, [fuelOptions]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem('smart_fuel_options', JSON.stringify(fuelOptions));
+        } catch (e) {}
+      }, [fuelOptions]);
+
+      useEffect(() => {
+        try {
+          localStorage.setItem('smart_fuel_history', JSON.stringify(history));
+        } catch (e) {}
+      }, [history]);
+
+      const activeOption = useMemo(() => {
+        return fuelOptions.find(opt => opt.type === selectedType) || fuelOptions[0];
+      }, [fuelOptions, selectedType]);
+
+      const calculatedLiters = useMemo(() => {
+        const numericValue = parseFloat(cashValue);
+        if (isNaN(numericValue) || numericValue <= 0) return 0;
+        return numericValue / activeOption.pricePerLiter;
+      }, [cashValue, activeOption]);
+
+      const stats = useMemo(() => {
+        if (history.length === 0) {
+          return { totalSpent: 0, totalLiters: 0, averagePrice: 0, count: 0 };
+        }
+        const totalSpent = history.reduce((sum, item) => sum + item.valuePaid, 0);
+        const totalLiters = history.reduce((sum, item) => sum + item.liters, 0);
+        const averagePrice = totalLiters > 0 ? totalSpent / totalLiters : 0;
+        
+        return { totalSpent, totalLiters, averagePrice, count: history.length };
+      }, [history]);
+
+      const handleSavePrices = () => {
+        const updatedOptions = fuelOptions.map(opt => {
+          const editedVal = parseFloat(priceEdits[opt.type]);
+          const validPrice = !isNaN(editedVal) && editedVal > 0 ? editedVal : opt.pricePerLiter;
+          return { ...opt, pricePerLiter: validPrice };
+        });
+        setFuelOptions(updatedOptions);
+        setIsEditingPrices(false);
+      };
+
+      const handleResetPrices = () => {
+        if (window.confirm('Deseja redefinir os preços para os valores padrão?')) {
+          setFuelOptions(DEFAULT_FUEL_OPTIONS);
+          setPriceEdits({
+            Gasolina: '5.89',
+            Etanol: '3.99',
+            Diesel: '6.09',
+            GNV: '4.59'
+          });
+          setIsEditingPrices(false);
+        }
+      };
+
+      const handlePresetClick = (amount) => {
+        setInputError(null);
+        setCashValue(prev => {
+          const current = parseFloat(prev);
+          if (isNaN(current)) return amount.toString();
+          return (current + amount).toString();
+        });
+      };
+
+      const handleClearInput = () => {
+        setCashValue('');
+        setInputError(null);
+      };
+
+      const handleConfirmFueling = (e) => {
+        e.preventDefault();
+        const value = parseFloat(cashValue);
+        
+        if (isNaN(value) || value <= 0) {
+          setInputError('Por favor, informe um valor em dinheiro válido maior que R$ 0,00');
+          return;
+        }
+        
+        setInputError(null);
+        setIsFueling(true);
+        setFuelingProgress(0);
+        setFuelingDone(false);
+
+        const duration = 1800;
+        const intervalTime = 40;
+        const steps = duration / intervalTime;
+        let currentStep = 0;
+
+        const timer = setInterval(() => {
+          currentStep++;
+          const percent = Math.min((currentStep / steps) * 100, 100);
+          setFuelingProgress(percent);
+
+          if (currentStep >= steps) {
+            clearInterval(timer);
+            
+            const finalLiters = value / activeOption.pricePerLiter;
+            const newRecord = {
+              id: Math.random().toString(36).substring(2, 9),
+              date: new Date().toISOString(),
+              valuePaid: value,
+              liters: finalLiters,
+              pricePerLiter: activeOption.pricePerLiter,
+              fuelType: selectedType
+            };
+
+            setHistory(prev => [newRecord, ...prev]);
+            setLastFuelingResult({ valuePaid: value, liters: finalLiters, type: selectedType });
+            setIsFueling(false);
+            setFuelingDone(true);
+            setCashValue('');
+
+            setTimeout(() => {
+              setFuelingDone(false);
+            }, 4000);
+          }
+        }, intervalTime);
+      };
+
+      const handleDeleteRecord = (id) => {
+        setHistory(prev => prev.filter(record => record.id !== id));
+      };
+
+      const handleClearHistory = () => {
+        if (window.confirm('Tem certeza de que deseja apagar todo o histórico de abastecimentos?')) {
+          setHistory([]);
+        }
+      };
+
+      const formatDate = (isoString) => {
+        try {
+          const date = new Date(isoString);
+          return date.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } catch (e) {
+          return isoString;
+        }
+      };
+
+      const compareOption = useMemo(() => {
+        const altType = selectedType === 'Gasolina' ? 'Etanol' : 'Gasolina';
+        return fuelOptions.find(o => o.type === altType) || fuelOptions[0];
+      }, [fuelOptions, selectedType]);
+
+      return (
+        <div className="w-full min-h-screen bg-[#f8fafc] flex flex-col font-sans text-slate-900 p-4 sm:p-8 overflow-x-hidden">
+          
+          {/* HEADER */}
+          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-100 shrink-0">
+                <FuelIcon className="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <div className="flex flex-col">
+                <h1 className="text-xl font-extrabold tracking-tight text-slate-900 leading-none font-display">SmartFuel</h1>
+                <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-[0.2em] mt-1">Abastecimento Inteligente</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <div className="bg-white border border-slate-200 rounded-2xl px-5 py-2.5 flex items-center gap-5 shadow-sm">
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">{activeOption.type} / Litro</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-xs font-semibold text-slate-400">R$</span>
+                    <span className="text-lg font-bold text-indigo-600">
+                      {activeOption.pricePerLiter.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+                <div className="w-[1px] h-8 bg-slate-100"></div>
+                <div className="flex flex-col items-end">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400">Status Bomba</span>
+                  <span className="text-xs font-bold text-emerald-500 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    DISPONÍVEL
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsEditingPrices(!isEditingPrices)}
+                className={`inline-flex items-center gap-1.5 px-4 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all ${
+                  isEditingPrices 
+                    ? 'bg-slate-200 text-slate-800' 
+                    : 'bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50'
+                }`}
+              >
+                <EditIcon className="w-3.5 h-3.5 text-indigo-600" />
+                {isEditingPrices ? 'Concluir' : 'Preços'}
+              </button>
+            </div>
+          </header>
+
+          {/* CONTEÚDO PRINCIPAL */}
+          <main className="grid grid-cols-12 gap-6 lg:gap-8 flex-grow">
+            
+            {/* COLUNA ESQUERDA */}
+            <div className="col-span-12 lg:col-span-7 flex flex-col gap-6">
+              
+              {/* PAINEL DE AJUSTE DE PREÇOS */}
+              {isEditingPrices && (
+                <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2rem] p-6 shadow-sm animate-fadeIn">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-2 text-indigo-900">
+                      <TrendingUpIcon className="w-5 h-5 text-indigo-600" />
+                      <h3 className="font-display font-bold text-base">Ajustar Preços dos Combustíveis</h3>
+                    </div>
+                    <button 
+                      onClick={handleResetPrices}
+                      className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2.5 py-1.5 rounded-lg transition"
+                    >
+                      <RotateCcwIcon className="w-3.5 h-3.5" />
+                      Padrões
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+                    Insira o valor por litro do seu posto. O cálculo de litros será atualizado instantaneamente.
+                  </p>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                    {fuelOptions.map(opt => (
+                      <div key={opt.type} className="bg-slate-50 p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{opt.type}</span>
+                        <div className="relative mt-1">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">R$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            value={priceEdits[opt.type]}
+                            onChange={(e) => setPriceEdits({ ...priceEdits, [opt.type]: e.target.value })}
+                            className="w-full pl-8 pr-2 py-1.5 text-sm font-bold text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingPrices(false)}
+                      className="px-4 py-2 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100 transition uppercase tracking-wider"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSavePrices}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm transition uppercase tracking-wider"
+                    >
+                      Salvar Novos Valores
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* SELEÇÃO DE COMBUSTÍVEL */}
+              <div className="bg-white rounded-[2.5rem] p-6 border border-slate-200 shadow-sm">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] mb-4 flex items-center gap-1.5">
+                  <ZapIcon className="w-3.5 h-3.5 text-slate-400" />
+                  1. Selecione o Combustível
+                </h3>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {fuelOptions.map((opt) => {
+                    const isSelected = selectedType === opt.type;
+                    return (
+                      <button
+                        key={opt.type}
+                        type="button"
+                        onClick={() => {
+                          setSelectedType(opt.type);
+                          setInputError(null);
+                        }}
+                        className={`p-4 rounded-2xl border text-left transition-all relative overflow-hidden ${
+                          isSelected 
+                            ? 'bg-indigo-600 text-white border-transparent ring-2 ring-offset-2 ring-indigo-600 shadow-lg shadow-indigo-100' 
+                            : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <span className="text-[11px] font-bold uppercase tracking-wider opacity-90">{opt.type}</span>
+                          {isSelected && <CheckIcon className="w-4 h-4 text-white" />}
+                        </div>
+                        <div className="mt-2 flex items-baseline gap-0.5">
+                          <span className="text-[10px] font-medium opacity-80">R$</span>
+                          <span className="text-lg font-bold font-display tracking-tight leading-none">
+                            {opt.pricePerLiter.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="text-[10px] opacity-80">/L</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* CALCULADORA INTELIGENTE */}
+              <section className="bg-white rounded-[2.5rem] border border-slate-200 p-8 sm:p-10 flex flex-col justify-between flex-grow shadow-sm relative overflow-hidden">
+                <div className="relative z-10 w-full">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-slate-400 text-xs font-bold uppercase tracking-[0.15em]">Configuração de Abastecimento</h2>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase tracking-wider">
+                      Preço Praticado: R$ {activeOption.pricePerLiter.toFixed(2)}/L
+                    </span>
+                  </div>
+
+                  <form onSubmit={handleConfirmFueling} className="space-y-8">
+                    <div className="space-y-3">
+                      <label className="text-slate-500 text-sm font-bold ml-1 block">Quanto deseja pagar?</label>
+                      
+                      <div className="relative flex items-center group">
+                        <span className="absolute left-8 text-4xl font-light text-slate-300 select-none group-focus-within:text-slate-800 transition">R$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="1"
+                          placeholder="0,00"
+                          value={cashValue}
+                          onChange={(e) => {
+                            setInputError(null);
+                            setCashValue(e.target.value);
+                          }}
+                          className="w-full bg-slate-50 border-2 border-slate-100 rounded-3xl py-7 pl-24 pr-16 text-5xl sm:text-6xl font-bold text-slate-800 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition"
+                          disabled={isFueling}
+                        />
+                        {cashValue && !isFueling && (
+                          <button
+                            type="button"
+                            onClick={handleClearInput}
+                            className="absolute right-5 w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center hover:bg-slate-300 transition"
+                            title="Limpar"
+                          >
+                            <span className="text-lg font-bold">×</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {inputError && (
+                        <p className="text-xs text-red-600 font-bold flex items-center gap-1.5 mt-2 animate-pulse">
+                          <InfoIcon className="w-4 h-4" />
+                          {inputError}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* VALORES PRÉ-DEFINIDOS */}
+                    <div className="flex flex-wrap gap-2.5 justify-start">
+                      {[20, 50, 100, 150, 200].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => handlePresetClick(preset)}
+                          disabled={isFueling}
+                          className="px-4 py-2.5 rounded-2xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition"
+                        >
+                          + R$ {preset}
+                        </button>
+                      ))}
+                      
+                      <button
+                        type="button"
+                        onClick={handleClearInput}
+                        disabled={!cashValue || isFueling}
+                        className="px-4 py-2.5 rounded-2xl text-xs font-bold bg-red-50 text-red-700 hover:bg-red-100 transition disabled:opacity-40"
+                      >
+                        Limpar
+                      </button>
+                    </div>
+
+                    {/* RESULTADO EM LITROS & INDICADOR RADIAL */}
+                    <div className="mt-10 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-100">
+                      <div className="flex-grow">
+                        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Volume a Receber</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-6xl sm:text-7xl lg:text-8xl font-light tracking-tighter text-slate-900 leading-none font-display">
+                            {calculatedLiters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 3 })}
+                          </span>
+                          <span className="text-xl sm:text-2xl font-black text-indigo-600 uppercase tracking-widest font-display">Litros</span>
+                        </div>
+                      </div>
+                      
+                      <div className="relative w-36 h-36 flex items-center justify-center p-2 shrink-0 bg-white rounded-full shadow-sm border border-slate-100">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                          <circle cx="50" cy="50" r="42" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-slate-100" />
+                          <circle 
+                            cx="50" 
+                            cy="50" 
+                            r="42" 
+                            stroke="currentColor" 
+                            strokeWidth="6" 
+                            fill="transparent" 
+                            strokeDasharray="263.8" 
+                            strokeDashoffset={263.8 - (263.8 * Math.min(calculatedLiters, 50)) / 50} 
+                            className="text-indigo-500 transition-all duration-300" 
+                            strokeLinecap="round" />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-lg font-black text-slate-800">
+                            {Math.round(Math.min((calculatedLiters / 50) * 100, 100))}%
+                          </span>
+                          <span className="text-[9px] text-slate-400 uppercase font-bold tracking-tighter">Nível Estimado</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* COMPARAÇÃO DE COMBUSTÍVEL ALTERNATIVO */}
+                    <div className="p-4 bg-indigo-50/40 rounded-2xl border border-indigo-100/50 flex items-center gap-3 text-xs text-slate-600">
+                      <InfoIcon className="w-4 h-4 text-indigo-500 shrink-0" />
+                      <span>
+                        Com o mesmo valor, você abasteceria{' '}
+                        <strong className="text-indigo-700">
+                          {(parseFloat(cashValue || '0') / (compareOption.pricePerLiter || 1)).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} L
+                        </strong>{' '}
+                        de {selectedType === 'Gasolina' ? 'Etanol' : 'Gasolina'}.
+                      </span>
+                    </div>
+
+                    {/* BOTAO DE ACAO E SIMULADOR */}
+                    <div className="pt-4">
+                      {!isFueling ? (
+                        <button
+                          type="submit"
+                          disabled={!cashValue || parseFloat(cashValue) <= 0}
+                          className={`relative z-10 w-full py-6 rounded-3xl font-bold text-lg sm:text-xl transition-all flex items-center justify-center gap-4 shadow-xl ${
+                            !cashValue || parseFloat(cashValue) <= 0
+                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+                              : 'bg-slate-900 text-white hover:bg-slate-800 cursor-pointer'
+                          }`}
+                        >
+                          Iniciar Abastecimento
+                          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14" />
+                            <path d="m12 5 7 7-7 7" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <div className="bg-slate-900 text-white rounded-3xl p-6 shadow-xl space-y-4">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold uppercase tracking-widest text-indigo-400 animate-pulse flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-ping"></span>
+                              Injetando Combustível...
+                            </span>
+                            <span className="text-sm font-mono font-bold text-indigo-300">{Math.round(fuelingProgress)}%</span>
+                          </div>
+                          
+                          <div className="w-full h-4 bg-slate-800 rounded-full p-1 overflow-hidden">
+                            <div 
+                              className="h-full bg-indigo-500 rounded-full transition-all duration-75"
+                              style={{ width: `${fuelingProgress}%` }}
+                            ></div>
+                          </div>
+
+                          <div className="flex justify-between text-xs text-slate-400 font-mono font-medium pt-1">
+                            <span>R$ {((parseFloat(cashValue) * fuelingProgress) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="text-indigo-300">{((calculatedLiters * fuelingProgress) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </form>
+                </div>
+
+                {/* MODAL DE SUCESSO */}
+                {fuelingDone && lastFuelingResult && (
+                  <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center text-white p-8 rounded-[2.5rem] animate-fadeIn z-20">
+                    <div className="w-20 h-20 bg-indigo-600 rounded-full flex items-center justify-center text-white mb-6 shadow-lg shadow-indigo-500/30">
+                      <CheckIcon className="w-12 h-12 stroke-[3]" />
+                    </div>
+                    <h3 className="font-display font-extrabold text-3xl tracking-tight text-center">Abastecido com Sucesso!</h3>
+                    <p className="text-slate-400 text-sm mt-2 text-center max-w-sm">O registro de abastecimento foi salvo no seu histórico local.</p>
+                    
+                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 w-full max-w-xs mt-6 space-y-3">
+                      <div className="flex justify-between text-xs text-slate-400">
+                        <span>Combustível</span>
+                        <span className="font-bold text-white">{lastFuelingResult.type}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-2">
+                        <span>Valor Pago</span>
+                        <span className="font-bold text-emerald-400">R$ {lastFuelingResult.valuePaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-2">
+                        <span>Litros Entregues</span>
+                        <span className="font-bold text-white">{lastFuelingResult.liters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L</span>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => setFuelingDone(false)}
+                      className="mt-8 px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 rounded-xl transition shadow-md"
+                    >
+                      Voltar à Calculadora
+                    </button>
+                  </div>
+                )}
+              </section>
+            </div>
+
+            {/* COLUNA DIREITA: ESTATÍSTICAS E HISTÓRICO */}
+            <div className="col-span-12 lg:col-span-5 flex flex-col gap-6">
+              
+              {/* PAINEL DE MÉTRICAS */}
+              <div className="bg-white rounded-[2.5rem] border border-slate-200 p-6 md:p-8 shadow-sm">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                  <TrendingUpIcon className="w-3.5 h-3.5 text-indigo-500" />
+                  Métricas Acumuladas
+                </h3>
+
+                {history.length === 0 ? (
+                  <div className="text-center py-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    <p className="text-xs text-slate-400">Nenhum abastecimento registrado ainda</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Gasto Total</span>
+                      <span className="text-2xl font-black text-slate-800 font-display mt-2 tracking-tight">
+                        R$ {stats.totalSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                      <span className="text-[9px] text-indigo-600 mt-2 block font-semibold uppercase tracking-wider">{stats.count} registros</span>
+                    </div>
+
+                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Litros Totais</span>
+                      <span className="text-2xl font-black text-slate-800 font-display mt-2 tracking-tight">
+                        {stats.totalLiters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L
+                      </span>
+                      <span className="text-[9px] text-slate-400 mt-2 block font-medium">Acumulado</span>
+                    </div>
+
+                    <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-100/50 col-span-2 flex justify-between items-center">
+                      <div>
+                        <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider block">Preço Médio Pago</span>
+                        <span className="text-xl font-black text-indigo-900 font-display mt-1 tracking-tight">
+                          R$ {stats.averagePrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / L
+                        </span>
+                      </div>
+                      <div className="bg-indigo-100 p-3 rounded-xl text-indigo-600">
+                        <SparklesIcon className="w-5 h-5 stroke-[2.5]" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* PAINEL DE HISTÓRICO */}
+              <div className="bg-white rounded-[2.5rem] border border-slate-200 flex flex-col shadow-sm overflow-hidden flex-grow">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                  <h2 className="text-slate-900 font-extrabold text-lg tracking-tight font-display">Histórico Recente</h2>
+                  {history.length > 0 && (
+                    <button
+                      onClick={handleClearHistory}
+                      className="text-[10px] font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition"
+                    >
+                      Limpar Tudo
+                    </button>
+                  )}
+                </div>
+
+                {history.length === 0 ? (
+                  <div className="flex-grow flex flex-col items-center justify-center text-center py-12 px-6 bg-slate-50/50">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                      <CalendarIcon className="w-5 h-5" />
+                    </div>
+                    <h4 className="font-extrabold text-sm text-slate-700">Histórico Vazio</h4>
+                    <p className="text-xs text-slate-400 mt-1.5 max-w-[240px] mx-auto leading-relaxed">
+                      Seus abastecimentos confirmados serão salvos aqui.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex-grow overflow-y-auto px-6 py-4 space-y-3 custom-scrollbar max-h-[420px]">
+                    {history.map((record) => (
+                      <div 
+                        key={record.id} 
+                        className="group p-4 rounded-2xl border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/10 transition-all flex items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 shadow-sm flex items-center justify-center shrink-0 text-indigo-600">
+                            <FuelIcon className="w-5 h-5 stroke-[2]" />
+                          </div>
+                          
+                          <div className="min-w-0">
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="font-black text-slate-800 text-base font-display">
+                                R$ {record.valuePaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md uppercase tracking-wider font-mono">
+                                {record.fuelType}
+                              </span>
+                            </div>
+                            
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-400 mt-1 font-medium">
+                              <span className="text-slate-600 font-bold">
+                                {record.liters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L
+                              </span>
+                              <span>•</span>
+                              <span>R$ {record.pricePerLiter.toFixed(2)}/L</span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <ClockIcon className="w-3 h-3 text-slate-300" />
+                                {formatDate(record.date)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleDeleteRecord(record.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center shrink-0"
+                          title="Apagar registro"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </main>
+
+          {/* RODAPÉ */}
+          <footer className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-slate-200/60 pt-6 px-2 opacity-60">
+            <div className="flex gap-6 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                Autônomo Local Ativo
+              </span>
+            </div>
+            <div className="text-[10px] font-medium text-slate-400">
+              SmartFuel v2.4.0 • Execução Direta no Navegador
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
